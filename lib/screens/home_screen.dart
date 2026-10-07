@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../widgets/color_tile.dart';
+import '../models/palette_color.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -10,7 +11,30 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final TextEditingController _promptController = TextEditingController();
+    final TextEditingController _promptController = TextEditingController();
+
+    final List<PaletteColor> _palette = [
+      const PaletteColor(
+        color: Color(0xFF24382F),
+        name: 'Forest',
+      ),
+      const PaletteColor(
+        color: Color(0xFF6A4635),
+        name: 'Earth',
+      ),
+      const PaletteColor(
+        color: Color(0xFFC47A3D),
+        name: 'Autumn',
+      ),
+      const PaletteColor(
+        color: Color(0xFFD69A5B),
+        name: 'Amber',
+      ),
+      const PaletteColor(
+        color: Color(0xFFE8D8B5),
+        name: 'Cream',
+      ),
+    ];
 
   @override
   void dispose() {
@@ -156,29 +180,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildPalettePreview() {
-    const colors = [
-      (
-        color: Color(0xFF24382F),
-        name: 'Forest',
-      ),
-      (
-        color: Color(0xFF6A4635),
-        name: 'Earth',
-      ),
-      (
-        color: Color(0xFFC47A3D),
-        name: 'Autumn',
-      ),
-      (
-        color: Color(0xFFD69A5B),
-        name: 'Amber',
-      ),
-      (
-        color: Color(0xFFE8D8B5),
-        name: 'Cream',
-      ),
-    ];
-
     return LayoutBuilder(
       builder: (context, constraints) {
         final isMobile = constraints.maxWidth < 600;
@@ -187,16 +188,19 @@ class _HomeScreenState extends State<HomeScreen> {
           return SizedBox(
             height: 600,
             child: Column(
-              children: colors.map((item) {
-                return Expanded(
-                  child: ColorTile(
-                    color: item.color,
-                    name: item.name,
-                    isLocked: false,
-                    onLockChanged: () {},
-                  ),
-                );
-              }).toList(),
+              children: List.generate(
+                _palette.length,
+                (index) {
+                  return Expanded(
+                    child: ColorTile(
+                      paletteColor: _palette[index],
+                      onLockChanged: () {
+                        _toggleLock(index);
+                      },
+                    ),
+                  );
+                },
+              ),
             ),
           );
         }
@@ -204,20 +208,33 @@ class _HomeScreenState extends State<HomeScreen> {
         return SizedBox(
           height: 420,
           child: Row(
-            children: colors.map((item) {
-              return Expanded(
-                child: ColorTile(
-                  color: item.color,
-                  name: item.name,
-                  isLocked: false,
-                  onLockChanged: () {},
-                ),
-              );
-            }).toList(),
+            children: List.generate(
+              _palette.length,
+              (index) {
+                return Expanded(
+                  child: ColorTile(
+                    paletteColor: _palette[index],
+                    onLockChanged: () {
+                      _toggleLock(index);
+                    },
+                  ),
+                );
+              },
+            ),
           ),
         );
       },
     );
+  }
+
+  void _toggleLock(int index) {
+    setState(() {
+      final currentColor = _palette[index];
+
+      _palette[index] = currentColor.copyWith(
+        isLocked: !currentColor.isLocked,
+      );
+    });
   }
 
 }

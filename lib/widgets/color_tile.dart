@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../models/palette_color.dart';
 import '../utils/color_utils.dart';
 
 class ColorTile extends StatefulWidget {
-  final Color color;
-  final String name;
-  final bool isLocked;
+  final PaletteColor paletteColor;
   final VoidCallback onLockChanged;
 
   const ColorTile({
     super.key,
-    required this.color,
-    required this.name,
-    required this.isLocked,
+    required this.paletteColor,
     required this.onLockChanged,
   });
 
@@ -25,8 +22,9 @@ class _ColorTileState extends State<ColorTile> {
 
   @override
   Widget build(BuildContext context) {
-    final textColor = ColorUtils.textColorFor(widget.color);
-    final hex = ColorUtils.colorToHex(widget.color);
+    final color = widget.paletteColor.color;
+    final textColor = ColorUtils.textColorFor(color);
+    final hex = ColorUtils.colorToHex(color);
 
     return GestureDetector(
       onTapDown: (_) {
@@ -52,7 +50,7 @@ class _ColorTileState extends State<ColorTile> {
         curve: Curves.easeOut,
         child: Container(
           decoration: BoxDecoration(
-            color: widget.color,
+            color: color,
           ),
           padding: const EdgeInsets.all(20),
           child: Stack(
@@ -73,7 +71,7 @@ class _ColorTileState extends State<ColorTile> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      widget.name.toUpperCase(),
+                      widget.paletteColor.name.toUpperCase(),
                       style: TextStyle(
                         color: textColor.withValues(alpha: 0.8),
                         fontSize: 12,
@@ -87,7 +85,7 @@ class _ColorTileState extends State<ColorTile> {
               Align(
                 alignment: Alignment.topRight,
                 child: Icon(
-                  widget.isLocked
+                  widget.paletteColor.isLocked
                       ? Icons.lock_rounded
                       : Icons.lock_open_rounded,
                   color: textColor,
