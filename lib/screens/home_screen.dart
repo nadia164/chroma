@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../widgets/color_tile.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -155,27 +157,66 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildPalettePreview() {
     const colors = [
-      Color(0xFF24382F),
-      Color(0xFF6A4635),
-      Color(0xFFC47A3D),
-      Color(0xFFD69A5B),
-      Color(0xFFE8D8B5),
+      (
+        color: Color(0xFF24382F),
+        name: 'Forest',
+      ),
+      (
+        color: Color(0xFF6A4635),
+        name: 'Earth',
+      ),
+      (
+        color: Color(0xFFC47A3D),
+        name: 'Autumn',
+      ),
+      (
+        color: Color(0xFFD69A5B),
+        name: 'Amber',
+      ),
+      (
+        color: Color(0xFFE8D8B5),
+        name: 'Cream',
+      ),
     ];
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(28),
-      child: SizedBox(
-        height: 420,
-        child: Row(
-          children: colors.map((color) {
-            return Expanded(
-              child: Container(
-                color: color,
-              ),
-            );
-          }).toList(),
-        ),
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 600;
+
+        if (isMobile) {
+          return SizedBox(
+            height: 600,
+            child: Column(
+              children: colors.map((item) {
+                return Expanded(
+                  child: ColorTile(
+                    color: item.color,
+                    name: item.name,
+                    isLocked: false,
+                    onLockChanged: () {},
+                  ),
+                );
+              }).toList(),
+            ),
+          );
+        }
+
+        return SizedBox(
+          height: 420,
+          child: Row(
+            children: colors.map((item) {
+              return Expanded(
+                child: ColorTile(
+                  color: item.color,
+                  name: item.name,
+                  isLocked: false,
+                  onLockChanged: () {},
+                ),
+              );
+            }).toList(),
+          ),
+        );
+      },
     );
   }
 
