@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../widgets/color_tile.dart';
 import '../models/palette_color.dart';
-import '../services/palette_generator.dart';
+import '../services/palette_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -39,6 +39,9 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     int _paletteGeneration = 0;
+    final PaletteService _paletteService = PaletteService();
+
+    bool _isGenerating = false;
 
   @override
   void dispose() {
@@ -165,14 +168,20 @@ class _HomeScreenState extends State<HomeScreen> {
       width: double.infinity,
       height: 58,
       child: FilledButton.icon(
-        onPressed: _generatePalette,
-        icon: const Icon(Icons.auto_awesome),
-        label: const Text(
-          'GENERATE PALETTE',
-          style: TextStyle(
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.5,
-          ),
+        onPressed: _isGenerating ? null : _generatePalette,
+        icon: _isGenerating
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                ),
+              )
+            : const Icon(Icons.auto_awesome),
+        label: Text(
+          _isGenerating
+              ? 'GENERATING...'
+              : 'GENERATE PALETTE',
         ),
         style: FilledButton.styleFrom(
           shape: RoundedRectangleBorder(
@@ -281,17 +290,52 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _generatePalette() {
+  Future<void> _generatePalette() async {
+    if (_isGenerating) {
+      return;
+    }
+
     HapticFeedback.lightImpact();
 
     setState(() {
-      _palette = PaletteGenerator.generate(
-        prompt: _promptController.text,
+      _isGenerating = true;
+    });
+
+    try {
+      final generatedPalette = await _paletteService.generatePalette(
         currentPalette: _palette,
       );
 
-      _paletteGeneration++;
-    });
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _palette = generatedPalette;
+        _paletteGeneration++;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Unable to generate palette. Please try again.',
+            ),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+    } finally {
+        if (mounted) {
+          setState(() {
+            _isGenerating = false;
+          });
+        }
+      }
   }
 
 }
