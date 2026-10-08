@@ -7,9 +7,12 @@ import '../services/palette_service.dart';
 import '../models/saved_palette.dart';
 import '../services/palette_storage_service.dart';
 import 'saved_palettes_screen.dart';
+import '../services/theme_controller.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final ThemeController themeController;
+
+  const HomeScreen({super.key, required this.themeController});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -97,7 +100,7 @@ class _HomeScreenState extends State<HomeScreen> {
           tooltip: 'My Palettes',
         ),
         IconButton(
-          onPressed: () {},
+          onPressed: _showThemePicker,
           icon: const Icon(Icons.brightness_6_outlined),
           tooltip: 'Change theme',
         ),
@@ -374,5 +377,87 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
     }
+  }
+
+  void _showThemePicker() {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (context) {
+        final currentTheme = widget.themeController.themeMode;
+
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Appearance',
+                  style: Theme.of(context).textTheme.titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Choose how Chroma should look.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildThemeOption(
+                  context: context,
+                  title: 'System',
+                  icon: Icons.brightness_auto_outlined,
+                  mode: ThemeMode.system,
+                  currentTheme: currentTheme,
+                ),
+                _buildThemeOption(
+                  context: context,
+                  title: 'Light',
+                  icon: Icons.light_mode_outlined,
+                  mode: ThemeMode.light,
+                  currentTheme: currentTheme,
+                ),
+                _buildThemeOption(
+                  context: context,
+                  title: 'Dark',
+                  icon: Icons.dark_mode_outlined,
+                  mode: ThemeMode.dark,
+                  currentTheme: currentTheme,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildThemeOption({
+    required BuildContext context,
+    required String title,
+    required IconData icon,
+    required ThemeMode mode,
+    required ThemeMode currentTheme,
+  }) {
+    final isSelected = mode == currentTheme;
+
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(title),
+      trailing: isSelected ? const Icon(Icons.check_rounded) : null,
+      selected: isSelected,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      onTap: () async {
+        await widget.themeController.setThemeMode(mode);
+
+        if (!context.mounted) {
+          return;
+        }
+
+        Navigator.of(context).pop();
+      },
+    );
   }
 }
