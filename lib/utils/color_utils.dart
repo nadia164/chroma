@@ -8,10 +8,22 @@ class ColorUtils {
   }
 
   static String colorToHex(Color color) {
-    final red = color.r.round().toRadixString(16).padLeft(2, '0');
-    final green = color.g.round().toRadixString(16).padLeft(2, '0');
-    final blue = color.b.round().toRadixString(16).padLeft(2, '0');
+    final argb = color.toARGB32();
 
-    return '#${red.toUpperCase()}${green.toUpperCase()}${blue.toUpperCase()}';
+    final red = ((argb >> 16) & 0xFF)
+        .toRadixString(16)
+        .padLeft(2, '0');
+
+    final green = ((argb >> 8) & 0xFF)
+        .toRadixString(16)
+        .padLeft(2, '0');
+
+    final blue = (argb & 0xFF)
+        .toRadixString(16)
+        .padLeft(2, '0');
+
+    return '#${red.toUpperCase()}'
+        '${green.toUpperCase()}'
+        '${blue.toUpperCase()}';
   }
 }

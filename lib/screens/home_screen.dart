@@ -303,6 +303,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       final generatedPalette = await _paletteService.generatePalette(
+        prompt: _promptController.text,
         currentPalette: _palette,
       );
 

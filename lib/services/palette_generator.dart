@@ -2,37 +2,10 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-import '../models/palette_color.dart';
-
 class PaletteGenerator {
   static final Random _random = Random();
 
-  static List<PaletteColor> generate({
-    required String prompt,
-    required List<PaletteColor> currentPalette,
-  }) {
-    final colors = _colorsForPrompt(prompt);
-
-    return List.generate(
-      currentPalette.length,
-      (index) {
-        final currentColor = currentPalette[index];
-
-        if (currentColor.isLocked) {
-          return currentColor;
-        }
-
-        final color = colors[index % colors.length];
-
-        return PaletteColor(
-          color: color,
-          name: _generateColorName(color),
-        );
-      },
-    );
-  }
-
-  static List<Color> _colorsForPrompt(String prompt) {
+  static List<Color> seedColorsForPrompt(String prompt) {
     final normalizedPrompt = prompt.toLowerCase().trim();
 
     if (normalizedPrompt.contains('autumn') ||
@@ -119,50 +92,12 @@ class PaletteGenerator {
   static List<Color> _randomPalette() {
     return List.generate(
       5,
-      (_) => _generateRandomColor(),
+      (_) => Color.fromARGB(
+        255,
+        _random.nextInt(256),
+        _random.nextInt(256),
+        _random.nextInt(256),
+      ),
     );
-  }
-
-  static Color _generateRandomColor() {
-    return Color.fromARGB(
-      255,
-      _random.nextInt(256),
-      _random.nextInt(256),
-      _random.nextInt(256),
-    );
-  }
-
-  static String _generateColorName(Color color) {
-    final hue = HSVColor.fromColor(color).hue;
-
-    if (hue < 30) {
-      return 'Red';
-    }
-
-    if (hue < 60) {
-      return 'Orange';
-    }
-
-    if (hue < 90) {
-      return 'Yellow';
-    }
-
-    if (hue < 150) {
-      return 'Green';
-    }
-
-    if (hue < 210) {
-      return 'Cyan';
-    }
-
-    if (hue < 270) {
-      return 'Blue';
-    }
-
-    if (hue < 330) {
-      return 'Purple';
-    }
-
-    return 'Red';
   }
 }
