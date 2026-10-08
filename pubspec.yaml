@@ -37,6 +37,7 @@ dependencies:
   http: ^1.6.0
   flex_color_picker: ^4.0.0
   shared_preferences: ^2.5.6
+  share_plus: ^13.3.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -1,24 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 
-import '../models/saved_palette.dart';
-import '../utils/color_utils.dart';
 import '../models/palette_color.dart';
+import '../models/saved_palette.dart';
+import '../services/palette_export_service.dart';
+import '../utils/color_utils.dart';
 
-class PaletteDetailScreen extends StatelessWidget {
+class PaletteDetailScreen extends StatefulWidget {
   final SavedPalette palette;
 
   const PaletteDetailScreen({super.key, required this.palette});
+
+  @override
+  State<PaletteDetailScreen> createState() => _PaletteDetailScreenState();
+}
+
+class _PaletteDetailScreenState extends State<PaletteDetailScreen> {
+  final PaletteExportService _exportService = PaletteExportService();
+
+  bool _isExporting = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          palette.prompt,
+          widget.palette.prompt,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
+        actions: [
+          IconButton(
+            onPressed: _isExporting ? null : _exportPalette,
+            icon: _isExporting
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.ios_share_rounded),
+            tooltip: 'Export palette',
+          ),
+        ],
       ),
       body: SafeArea(
         child: LayoutBuilder(
@@ -41,7 +65,7 @@ class PaletteDetailScreen extends StatelessWidget {
       children: [
         Expanded(
           child: Column(
-            children: palette.colors.map((paletteColor) {
+            children: widget.palette.colors.map((paletteColor) {
               return Expanded(child: _buildColorSection(context, paletteColor));
             }).toList(),
           ),
@@ -56,7 +80,7 @@ class PaletteDetailScreen extends StatelessWidget {
       children: [
         Expanded(
           child: Row(
-            children: palette.colors.map((paletteColor) {
+            children: widget.palette.colors.map((paletteColor) {
               return Expanded(child: _buildColorSection(context, paletteColor));
             }).toList(),
           ),
@@ -144,5 +168,62 @@ class PaletteDetailScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _exportPalette() async {
+    setState(() {
+      _isExporting = true;
+    });
+
+    try {
+      final Uint8List image = await _exportService.createPaletteImage(
+        widget.palette,
+      );
+
+      final fileName = _buildFileName();
+
+      final xFile = XFile.fromData(
+        image,
+        name: fileName,
+        mimeType: 'image/png',
+      );
+
+      await SharePlus.instance.share(
+        ShareParams(files: [xFile], text: 'Palette: ${widget.palette.prompt}'),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Unable to share palette.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isExporting = false;
+        });
+      }
+    }
+  }
+
+  String _buildFileName() {
+    final sanitizedPrompt = widget.palette.prompt
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+        .replaceAll(RegExp(r'^_+|_+$'), '');
+
+    final name = sanitizedPrompt.isEmpty
+        ? 'chroma_palette'
+        : 'chroma_$sanitizedPrompt';
+
+    return '$name.png';
   }
 }
