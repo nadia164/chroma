@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../widgets/color_tile.dart';
 import '../models/palette_color.dart';
+import '../services/palette_generator.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,7 +15,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
     final TextEditingController _promptController = TextEditingController();
 
-    final List<PaletteColor> _palette = [
+    List<PaletteColor> _palette = [
       const PaletteColor(
         color: Color(0xFF24382F),
         name: 'Forest',
@@ -35,6 +37,8 @@ class _HomeScreenState extends State<HomeScreen> {
         name: 'Cream',
       ),
     ];
+
+    int _paletteGeneration = 0;
 
   @override
   void dispose() {
@@ -161,7 +165,7 @@ class _HomeScreenState extends State<HomeScreen> {
       width: double.infinity,
       height: 58,
       child: FilledButton.icon(
-        onPressed: () {},
+        onPressed: _generatePalette,
         icon: const Icon(Icons.auto_awesome),
         label: const Text(
           'GENERATE PALETTE',
@@ -192,11 +196,31 @@ class _HomeScreenState extends State<HomeScreen> {
                 _palette.length,
                 (index) {
                   return Expanded(
-                    child: ColorTile(
-                      paletteColor: _palette[index],
-                      onLockChanged: () {
-                        _toggleLock(index);
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 450),
+                      switchInCurve: Curves.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      transitionBuilder: (child, animation) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: ScaleTransition(
+                            scale: Tween<double>(
+                              begin: 0.96,
+                              end: 1.0,
+                            ).animate(animation),
+                            child: child,
+                          ),
+                        );
                       },
+                      child: ColorTile(
+                        key: ValueKey(
+                          '${_paletteGeneration}_${_palette[index].color.toARGB32()}',
+                        ),
+                        paletteColor: _palette[index],
+                        onLockChanged: () {
+                          _toggleLock(index);
+                        },
+                      ),
                     ),
                   );
                 },
@@ -212,11 +236,31 @@ class _HomeScreenState extends State<HomeScreen> {
               _palette.length,
               (index) {
                 return Expanded(
-                  child: ColorTile(
-                    paletteColor: _palette[index],
-                    onLockChanged: () {
-                      _toggleLock(index);
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 450),
+                    switchInCurve: Curves.easeOut,
+                    switchOutCurve: Curves.easeIn,
+                    transitionBuilder: (child, animation) {
+                      return FadeTransition(
+                        opacity: animation,
+                        child: ScaleTransition(
+                          scale: Tween<double>(
+                            begin: 0.96,
+                            end: 1.0,
+                          ).animate(animation),
+                          child: child,
+                        ),
+                      );
                     },
+                    child: ColorTile(
+                      key: ValueKey(
+                        '${_paletteGeneration}_${_palette[index].color.toARGB32()}',
+                      ),
+                      paletteColor: _palette[index],
+                      onLockChanged: () {
+                        _toggleLock(index);
+                      },
+                    ),
                   ),
                 );
               },
@@ -234,6 +278,19 @@ class _HomeScreenState extends State<HomeScreen> {
       _palette[index] = currentColor.copyWith(
         isLocked: !currentColor.isLocked,
       );
+    });
+  }
+
+  void _generatePalette() {
+    HapticFeedback.lightImpact();
+
+    setState(() {
+      _palette = PaletteGenerator.generate(
+        prompt: _promptController.text,
+        currentPalette: _palette,
+      );
+
+      _paletteGeneration++;
     });
   }
 

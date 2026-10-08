@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../models/palette_color.dart';
 import '../utils/color_utils.dart';
@@ -37,6 +38,7 @@ class _ColorTileState extends State<ColorTile> {
           _isPressed = false;
         });
 
+        HapticFeedback.lightImpact();
         widget.onLockChanged();
       },
       onTapCancel: () {
