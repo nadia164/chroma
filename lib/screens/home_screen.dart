@@ -35,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final PaletteStorageService _paletteStorageService = PaletteStorageService();
 
   bool _isGenerating = false;
+  bool _isCurrentPaletteSaved = false;
 
   @override
   void dispose() {
@@ -187,9 +188,13 @@ class _HomeScreenState extends State<HomeScreen> {
       width: double.infinity,
       height: 58,
       child: OutlinedButton.icon(
-        onPressed: _savePalette,
-        icon: const Icon(Icons.bookmark_border_rounded),
-        label: const Text('SAVE PALETTE'),
+        onPressed: _isCurrentPaletteSaved ? null : _savePalette,
+        icon: Icon(
+          _isCurrentPaletteSaved
+              ? Icons.bookmark_rounded
+              : Icons.bookmark_border_rounded,
+        ),
+        label: Text(_isCurrentPaletteSaved ? 'SAVED' : 'SAVE PALETTE'),
         style: OutlinedButton.styleFrom(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
@@ -286,6 +291,8 @@ class _HomeScreenState extends State<HomeScreen> {
       final currentColor = _palette[index];
 
       _palette[index] = currentColor.copyWith(isLocked: !currentColor.isLocked);
+
+      _isCurrentPaletteSaved = false;
     });
   }
 
@@ -313,6 +320,7 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _palette = generatedPalette;
         _paletteGeneration++;
+        _isCurrentPaletteSaved = false;
       });
     } catch (error) {
       if (!mounted) {
@@ -352,6 +360,10 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted) {
         return;
       }
+
+      setState(() {
+        _isCurrentPaletteSaved = true;
+      });
 
       HapticFeedback.lightImpact();
 
