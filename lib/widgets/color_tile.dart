@@ -21,6 +21,37 @@ class ColorTile extends StatefulWidget {
 class _ColorTileState extends State<ColorTile> {
   bool _isPressed = false;
 
+  Future<void> _copyHex(String hex) async {
+    await Clipboard.setData(
+      ClipboardData(text: hex),
+    );
+
+    HapticFeedback.lightImpact();
+
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$hex copied'),
+        duration: const Duration(milliseconds: 1200),
+        behavior: SnackBarBehavior.floating,
+        width: 180,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+  }
+
+  void _toggleLock() {
+    HapticFeedback.lightImpact();
+    widget.onLockChanged();
+  }
+
   @override
   Widget build(BuildContext context) {
     final color = widget.paletteColor.color;
@@ -37,9 +68,6 @@ class _ColorTileState extends State<ColorTile> {
         setState(() {
           _isPressed = false;
         });
-
-        HapticFeedback.lightImpact();
-        widget.onLockChanged();
       },
       onTapCancel: () {
         setState(() {
@@ -62,13 +90,18 @@ class _ColorTileState extends State<ColorTile> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      hex,
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1,
+                    GestureDetector(
+                      onTap: () {
+                        _copyHex(hex);
+                      },
+                      child: Text(
+                        hex,
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -86,12 +119,18 @@ class _ColorTileState extends State<ColorTile> {
               ),
               Align(
                 alignment: Alignment.topRight,
-                child: Icon(
-                  widget.paletteColor.isLocked
-                      ? Icons.lock_rounded
-                      : Icons.lock_open_rounded,
-                  color: textColor,
-                  size: 22,
+                child: IconButton(
+                  onPressed: _toggleLock,
+                  tooltip: widget.paletteColor.isLocked
+                      ? 'Unlock color'
+                      : 'Lock color',
+                  icon: Icon(
+                    widget.paletteColor.isLocked
+                        ? Icons.lock_rounded
+                        : Icons.lock_open_rounded,
+                    color: textColor,
+                    size: 22,
+                  ),
                 ),
               ),
             ],
