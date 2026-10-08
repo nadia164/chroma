@@ -8,6 +8,8 @@ import '../models/saved_palette.dart';
 import '../services/palette_storage_service.dart';
 import 'saved_palettes_screen.dart';
 import '../services/theme_controller.dart';
+import '../screens/palette_history_screen.dart';
+import '../services/palette_history_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final ThemeController themeController;
@@ -33,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final PaletteService _paletteService = PaletteService();
 
   final PaletteStorageService _paletteStorageService = PaletteStorageService();
+  final PaletteHistoryService _paletteHistoryService = PaletteHistoryService();
 
   bool _isGenerating = false;
   bool _isCurrentPaletteSaved = false;
@@ -91,6 +94,16 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         const Spacer(),
+
+        IconButton(
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const PaletteHistoryScreen()),
+            );
+          },
+          icon: const Icon(Icons.history_rounded),
+          tooltip: 'History',
+        ),
         IconButton(
           onPressed: () {
             Navigator.of(context).push(
@@ -312,6 +325,17 @@ class _HomeScreenState extends State<HomeScreen> {
         prompt: _promptController.text,
         currentPalette: _palette,
       );
+
+      final historyPalette = SavedPalette(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        prompt: _promptController.text.trim().isEmpty
+            ? 'Untitled Palette'
+            : _promptController.text.trim(),
+        colors: List<PaletteColor>.from(generatedPalette),
+        createdAt: DateTime.now(),
+      );
+
+      await _paletteHistoryService.addToHistory(historyPalette);
 
       if (!mounted) {
         return;
