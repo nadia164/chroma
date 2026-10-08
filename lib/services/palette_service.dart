@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/palette_color.dart';
 
 class PaletteService {
-  static const String _baseUrl =
-      'https://colorfor.ai/api/public/v1/palette';
+  static const String _baseUrl = 'https://colorfor.ai/api/public/v1/palette';
 
   final Random _random = Random();
 
@@ -33,22 +33,16 @@ class PaletteService {
       queryParameters['anchors'] = lockedColors.join(',');
     }
 
-    final uri = Uri.parse(_baseUrl).replace(
-      queryParameters: queryParameters,
-    );
+    final uri = Uri.parse(_baseUrl).replace(queryParameters: queryParameters);
 
     debugPrint('Palette request: $uri');
 
     final response = await http.get(uri);
 
-    debugPrint(
-      'Palette response status: ${response.statusCode}',
-    );
+    debugPrint('Palette response status: ${response.statusCode}');
 
     if (response.statusCode != 200) {
-      throw Exception(
-        'Palette generation failed: ${response.statusCode}',
-      );
+      throw Exception('Palette generation failed: ${response.statusCode}');
     }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -71,9 +65,7 @@ class PaletteService {
 
     if (_lastVariant != null && availablePalettes.length > 1) {
       final filtered = availablePalettes
-          .where(
-            (palette) => palette['variant'] != _lastVariant,
-          )
+          .where((palette) => palette['variant'] != _lastVariant)
           .toList();
 
       if (filtered.isNotEmpty) {
@@ -92,10 +84,7 @@ class PaletteService {
       throw Exception('The selected palette has no colors.');
     }
 
-    final apiColors = colors
-        .whereType<String>()
-        .map(_hexToColor)
-        .toList();
+    final apiColors = colors.whereType<String>().map(_hexToColor).toList();
 
     if (apiColors.length < currentPalette.length) {
       throw Exception('The API returned too few colors.');
@@ -104,18 +93,15 @@ class PaletteService {
     /*
      * ColorFor.ai puts anchor colors into the returned palette.
      *
-     * We need to remove those anchor colors before assigning
-     * generated colors to the unlocked positions.
+     * Remove those anchor colors before assigning generated
+     * colors to unlocked positions.
      */
     final generatedColors = <Color>[];
 
     for (var index = 0; index < apiColors.length; index++) {
       final color = apiColors[index];
 
-      final isAnchor = _isAnchorColor(
-        color,
-        lockedColors,
-      );
+      final isAnchor = _isAnchorColor(color, lockedColors);
 
       if (!isAnchor) {
         generatedColors.add(color);
@@ -127,31 +113,23 @@ class PaletteService {
         .length;
 
     if (generatedColors.length < unlockedCount) {
-      throw Exception(
-        'The API did not return enough unlocked colors.',
-      );
+      throw Exception('The API did not return enough unlocked colors.');
     }
 
     var generatedIndex = 0;
 
-    final result = List.generate(
-      currentPalette.length,
-      (index) {
-        final currentColor = currentPalette[index];
+    final result = List.generate(currentPalette.length, (index) {
+      final currentColor = currentPalette[index];
 
-        if (currentColor.isLocked) {
-          return currentColor;
-        }
+      if (currentColor.isLocked) {
+        return currentColor;
+      }
 
-        final color = generatedColors[generatedIndex];
-        generatedIndex++;
+      final color = generatedColors[generatedIndex];
+      generatedIndex++;
 
-        return PaletteColor(
-          color: color,
-          name: _generateColorName(color),
-        );
-      },
-    );
+      return PaletteColor(color: color, name: _generateColorName(color));
+    });
 
     debugPrint('Selected variant: $_lastVariant');
 
@@ -163,10 +141,7 @@ class PaletteService {
     return result;
   }
 
-  bool _isAnchorColor(
-    Color color,
-    List<String> lockedColors,
-  ) {
+  bool _isAnchorColor(Color color, List<String> lockedColors) {
     final hex = _colorToHex(color);
 
     return lockedColors.contains(hex);
@@ -175,17 +150,11 @@ class PaletteService {
   String _colorToHex(Color color) {
     final argb = color.toARGB32();
 
-    final red = ((argb >> 16) & 0xFF)
-        .toRadixString(16)
-        .padLeft(2, '0');
+    final red = ((argb >> 16) & 0xFF).toRadixString(16).padLeft(2, '0');
 
-    final green = ((argb >> 8) & 0xFF)
-        .toRadixString(16)
-        .padLeft(2, '0');
+    final green = ((argb >> 8) & 0xFF).toRadixString(16).padLeft(2, '0');
 
-    final blue = (argb & 0xFF)
-        .toRadixString(16)
-        .padLeft(2, '0');
+    final blue = (argb & 0xFF).toRadixString(16).padLeft(2, '0');
 
     return '$red$green$blue'.toUpperCase();
   }
@@ -193,57 +162,10 @@ class PaletteService {
   Color _hexToColor(String hex) {
     final normalizedHex = hex.replaceFirst('#', '');
 
-    return Color(
-      int.parse('FF$normalizedHex', radix: 16),
-    );
+    return Color(int.parse('FF$normalizedHex', radix: 16));
   }
 
   String _generateColorName(Color color) {
-    final hsv = HSVColor.fromColor(color);
-    final hue = hsv.hue;
-    final saturation = hsv.saturation;
-    final value = hsv.value;
-
-    if (value < 0.2) {
-      return 'Black';
-    }
-
-    if (saturation < 0.12 && value > 0.85) {
-      return 'White';
-    }
-
-    if (saturation < 0.12) {
-      return 'Gray';
-    }
-
-    if (hue < 30) {
-      return 'Red';
-    }
-
-    if (hue < 60) {
-      return 'Orange';
-    }
-
-    if (hue < 90) {
-      return 'Yellow';
-    }
-
-    if (hue < 150) {
-      return 'Green';
-    }
-
-    if (hue < 210) {
-      return 'Cyan';
-    }
-
-    if (hue < 270) {
-      return 'Blue';
-    }
-
-    if (hue < 330) {
-      return 'Purple';
-    }
-
-    return 'Red';
+    return ColorTools.nameThatColor(color);
   }
 }

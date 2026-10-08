@@ -11,11 +11,7 @@ class PaletteColor {
     this.isLocked = false,
   });
 
-  PaletteColor copyWith({
-    Color? color,
-    String? name,
-    bool? isLocked,
-  }) {
+  PaletteColor copyWith({Color? color, String? name, bool? isLocked}) {
     return PaletteColor(
       color: color ?? this.color,
       name: name ?? this.name,

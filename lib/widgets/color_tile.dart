@@ -22,9 +22,7 @@ class _ColorTileState extends State<ColorTile> {
   bool _isPressed = false;
 
   Future<void> _copyHex(String hex) async {
-    await Clipboard.setData(
-      ClipboardData(text: hex),
-    );
+    await Clipboard.setData(ClipboardData(text: hex));
 
     HapticFeedback.lightImpact();
 
@@ -40,9 +38,7 @@ class _ColorTileState extends State<ColorTile> {
         duration: const Duration(milliseconds: 1200),
         behavior: SnackBarBehavior.floating,
         width: 180,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -79,9 +75,7 @@ class _ColorTileState extends State<ColorTile> {
         duration: const Duration(milliseconds: 120),
         curve: Curves.easeOut,
         child: Container(
-          decoration: BoxDecoration(
-            color: color,
-          ),
+          decoration: BoxDecoration(color: color),
           padding: const EdgeInsets.all(20),
           child: Stack(
             children: [

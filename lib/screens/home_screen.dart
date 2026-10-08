@@ -4,6 +4,9 @@ import 'package:flutter/services.dart';
 import '../widgets/color_tile.dart';
 import '../models/palette_color.dart';
 import '../services/palette_service.dart';
+import '../models/saved_palette.dart';
+import '../services/palette_storage_service.dart';
+import 'saved_palettes_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,35 +16,22 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-    final TextEditingController _promptController = TextEditingController();
+  final TextEditingController _promptController = TextEditingController();
 
-    List<PaletteColor> _palette = [
-      const PaletteColor(
-        color: Color(0xFF24382F),
-        name: 'Forest',
-      ),
-      const PaletteColor(
-        color: Color(0xFF6A4635),
-        name: 'Earth',
-      ),
-      const PaletteColor(
-        color: Color(0xFFC47A3D),
-        name: 'Autumn',
-      ),
-      const PaletteColor(
-        color: Color(0xFFD69A5B),
-        name: 'Amber',
-      ),
-      const PaletteColor(
-        color: Color(0xFFE8D8B5),
-        name: 'Cream',
-      ),
-    ];
+  List<PaletteColor> _palette = [
+    const PaletteColor(color: Color(0xFF24382F), name: 'Forest'),
+    const PaletteColor(color: Color(0xFF6A4635), name: 'Earth'),
+    const PaletteColor(color: Color(0xFFC47A3D), name: 'Autumn'),
+    const PaletteColor(color: Color(0xFFD69A5B), name: 'Amber'),
+    const PaletteColor(color: Color(0xFFE8D8B5), name: 'Cream'),
+  ];
 
-    int _paletteGeneration = 0;
-    final PaletteService _paletteService = PaletteService();
+  int _paletteGeneration = 0;
+  final PaletteService _paletteService = PaletteService();
 
-    bool _isGenerating = false;
+  final PaletteStorageService _paletteStorageService = PaletteStorageService();
+
+  bool _isGenerating = false;
 
   @override
   void dispose() {
@@ -58,14 +48,9 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 24,
-              vertical: 32,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: 1100,
-              ),
+              constraints: const BoxConstraints(maxWidth: 1100),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -76,9 +61,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildPromptInput(theme),
                   const SizedBox(height: 20),
                   _buildGenerateButton(colorScheme),
+                  const SizedBox(height: 12),
+                  _buildSaveButton(colorScheme),
                   const SizedBox(height: 48),
                   _buildPalettePreview(),
-
                 ],
               ),
             ),
@@ -101,6 +87,15 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         const Spacer(),
+        IconButton(
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SavedPalettesScreen()),
+            );
+          },
+          icon: const Icon(Icons.bookmark_border_rounded),
+          tooltip: 'My Palettes',
+        ),
         IconButton(
           onPressed: () {},
           icon: const Icon(Icons.brightness_6_outlined),
@@ -142,9 +137,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(
-            alpha: 0.5,
-          ),
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
       ),
       child: TextField(
@@ -173,17 +166,28 @@ class _HomeScreenState extends State<HomeScreen> {
             ? const SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                ),
+                child: CircularProgressIndicator(strokeWidth: 2.5),
               )
             : const Icon(Icons.auto_awesome),
-        label: Text(
-          _isGenerating
-              ? 'GENERATING...'
-              : 'GENERATE PALETTE',
-        ),
+        label: Text(_isGenerating ? 'GENERATING...' : 'GENERATE PALETTE'),
         style: FilledButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSaveButton(ColorScheme colorScheme) {
+    return SizedBox(
+      width: double.infinity,
+      height: 58,
+      child: OutlinedButton.icon(
+        onPressed: _savePalette,
+        icon: const Icon(Icons.bookmark_border_rounded),
+        label: const Text('SAVE PALETTE'),
+        style: OutlinedButton.styleFrom(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),
@@ -201,49 +205,7 @@ class _HomeScreenState extends State<HomeScreen> {
           return SizedBox(
             height: 600,
             child: Column(
-              children: List.generate(
-                _palette.length,
-                (index) {
-                  return Expanded(
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 450),
-                      switchInCurve: Curves.easeOut,
-                      switchOutCurve: Curves.easeIn,
-                      transitionBuilder: (child, animation) {
-                        return FadeTransition(
-                          opacity: animation,
-                          child: ScaleTransition(
-                            scale: Tween<double>(
-                              begin: 0.96,
-                              end: 1.0,
-                            ).animate(animation),
-                            child: child,
-                          ),
-                        );
-                      },
-                      child: ColorTile(
-                        key: ValueKey(
-                          '${_paletteGeneration}_${_palette[index].color.toARGB32()}',
-                        ),
-                        paletteColor: _palette[index],
-                        onLockChanged: () {
-                          _toggleLock(index);
-                        },
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          );
-        }
-
-        return SizedBox(
-          height: 420,
-          child: Row(
-            children: List.generate(
-              _palette.length,
-              (index) {
+              children: List.generate(_palette.length, (index) {
                 return Expanded(
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 450),
@@ -272,8 +234,44 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 );
-              },
+              }),
             ),
+          );
+        }
+
+        return SizedBox(
+          height: 420,
+          child: Row(
+            children: List.generate(_palette.length, (index) {
+              return Expanded(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 450),
+                  switchInCurve: Curves.easeOut,
+                  switchOutCurve: Curves.easeIn,
+                  transitionBuilder: (child, animation) {
+                    return FadeTransition(
+                      opacity: animation,
+                      child: ScaleTransition(
+                        scale: Tween<double>(
+                          begin: 0.96,
+                          end: 1.0,
+                        ).animate(animation),
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: ColorTile(
+                    key: ValueKey(
+                      '${_paletteGeneration}_${_palette[index].color.toARGB32()}',
+                    ),
+                    paletteColor: _palette[index],
+                    onLockChanged: () {
+                      _toggleLock(index);
+                    },
+                  ),
+                ),
+              );
+            }),
           ),
         );
       },
@@ -284,9 +282,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       final currentColor = _palette[index];
 
-      _palette[index] = currentColor.copyWith(
-        isLocked: !currentColor.isLocked,
-      );
+      _palette[index] = currentColor.copyWith(isLocked: !currentColor.isLocked);
     });
   }
 
@@ -324,19 +320,59 @@ class _HomeScreenState extends State<HomeScreen> {
         ..hideCurrentSnackBar()
         ..showSnackBar(
           const SnackBar(
-            content: Text(
-              'Unable to generate palette. Please try again.',
-            ),
+            content: Text('Unable to generate palette. Please try again.'),
             behavior: SnackBarBehavior.floating,
           ),
         );
     } finally {
-        if (mounted) {
-          setState(() {
-            _isGenerating = false;
-          });
-        }
+      if (mounted) {
+        setState(() {
+          _isGenerating = false;
+        });
       }
+    }
   }
 
+  Future<void> _savePalette() async {
+    final palette = SavedPalette(
+      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      prompt: _promptController.text.trim().isEmpty
+          ? 'Untitled Palette'
+          : _promptController.text.trim(),
+      colors: List<PaletteColor>.from(_palette),
+      createdAt: DateTime.now(),
+    );
+
+    try {
+      await _paletteStorageService.savePalette(palette);
+
+      if (!mounted) {
+        return;
+      }
+
+      HapticFeedback.lightImpact();
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Palette saved'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Unable to save palette.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+    }
+  }
 }
